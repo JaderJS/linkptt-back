@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TypeUser {
+  root
+  user
+}
+
+model User {
+  cuid      String           @id @default(cuid())
+  role      TypeUser
+  name      String           @db.VarChar(255)
+  username  String           @unique @db.VarChar(255)
+  email     String           @unique @db.VarChar(255)
+  password  String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  channels  UsersToChannel[]
+
+  channelUpdateBy Channels[] @relation("updatedByUser")
+  channelOwner    Channels[] @relation("owner")
+
+  @@map("users")
+}
+
+enum TypeUserChannel {
+  admin
+  user
+}
+
+model UsersToChannel {
+  id        Int             @id @default(autoincrement())
+  type      TypeUserChannel @default(user)
+  userCuid  String
+  channelId Int
+
+  channel Channels @relation(fields: [channelId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user    User     @relation(fields: [userCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@index([userCuid, channelId])
+  @@map("users_to_channel")
+}
+
+model Channels {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique @db.VarChar(255)
+  isPuclib  Boolean          @default(true)
+  password  String
+  updatedBy String
+  createdBy String
+  users     UsersToChannel[]
+
+  owner   User @relation("owner", fields: [createdBy], references: [cuid])
+  updated User @relation("updatedByUser", fields: [updatedBy], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("channels")
+}
