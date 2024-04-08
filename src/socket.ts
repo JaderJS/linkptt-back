@@ -1,5 +1,7 @@
 import { Server, Socket } from 'socket.io'
 import fs from "node:fs"
+import path from "node:path"
+import { createId } from '@paralleldrive/cuid2'
 
 export const socketEvents = (io: Server) => {
     io.on('connection', (socket: Socket) => {
@@ -9,24 +11,19 @@ export const socketEvents = (io: Server) => {
             io.emit('start', data)
         })
 
-        socket.on('send', (data) => {
-            io.emit('send', data)
-        })
-
         socket.on("stop", (data) => {
             io.emit("stop", data)
-        })
-        socket.on("metadata", (data) => {
-            io.emit("metadata", data)
+            // const chunks = fs.readFileSync(path.join(__dirname, "../", "/tmp"))
+            // console.log(chunks)
         })
 
-        socket.on("audio", (data) => {
-            console.log(data)
-
+        socket.on("audio", async (data) => {
+            
             if (data instanceof Buffer) {
                 io.emit("audio", data)
+                const filename = `${socket.id}+${createId()}.wav`
+                // fs.appendFileSync(path.join(__dirname, "../", "/tmp", filename), data)
             }
-            console.log("This data is not Blob")
 
         })
     })

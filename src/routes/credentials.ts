@@ -7,6 +7,7 @@ import { prisma } from "../database/client"
 import { compare } from "bcryptjs"
 import { sign } from 'jsonwebtoken'
 import { config } from "../../config"
+import { verifyToken } from "../middleware/auth"
 
 
 export const credentials = async (server: FastifyInstance, io: Server) => {
@@ -17,6 +18,11 @@ export const credentials = async (server: FastifyInstance, io: Server) => {
 
         // return res.send(connectedClients)
 
+    })
+
+
+    server.post(`/profile`, { preHandler: verifyToken }, async (req, res) => {
+        res.send({ data: req.body })
     })
 
     server.post(`/login`, async (req, res) => {
@@ -31,7 +37,7 @@ export const credentials = async (server: FastifyInstance, io: Server) => {
             const authorized = await compare(password, user.password)
 
             if (!authorized) {
-                return res.status(400).send({ msg: "Email or password invalid" })
+                return res.status(403).send({ msg: "Email or password invalid" })
             }
 
             const token = sign({ cuid: user.cuid, username: user.username }, config.secretToken, { expiresIn: "7d" })

@@ -57,6 +57,7 @@ model Channels {
   id        Int              @id @default(autoincrement())
   name      String           @unique @db.VarChar(255)
   isPuclib  Boolean          @default(true)
+  avatarUrl String
   password  String
   updatedBy String
   createdBy String

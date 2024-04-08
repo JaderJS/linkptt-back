@@ -3,19 +3,43 @@ import { FastifyInstance } from "fastify"
 import { prisma } from "../database/client"
 import { ZodError, z } from "zod"
 import { hash } from "bcryptjs"
+import { verifyToken } from "../middleware/auth"
 
 
 export const channels = async (server: FastifyInstance) => {
 
-    server.get(`/`, async (req, res) => {
+    server.get(`/`, { preHandler: verifyToken }, async (req, res) => {
 
-        const channels = await prisma.channels.findMany({ where: { isPuclib: true } })
-        return res.send({ data: channels.map((channel) => channel) })
+        const { user } = req.body as any
+        if (!user) {
+            return res.status(400).send({ msg: "No user" })
+        }
+
+        const channelsToUser = await prisma.user.findUniqueOrThrow({
+            where: {
+                cuid: user.cuid
+            }, include: {
+                channels: {
+                    include: {
+                        channel: {
+                            select: {
+                                id: true,
+                                name: true,
+                                isPuclib: true,
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        return res.send({ channels: channelsToUser.channels.map((channel) => channel.channel) })
     })
 
     server.post(`/`, async (req, res) => {
         const schema = z.object({
             name: z.string(),
+            avatarUrl: z.string().url(),
             password: z.string(),
             createdBy: z.string().cuid(),
             updatedBy: z.string().cuid(),

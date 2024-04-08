@@ -16,16 +16,18 @@ const main = async () => {
                     create: {
                         channel: {
                             create: {
-                                name: "Debug", password,
+                                name: "Debug",
+                                password,
                                 owner: { connect: { email: "jader.jader55@gmail.com" } },
-                                updated: { connect: { email: "jader.jader55@gmail.com" } }
+                                updated: { connect: { email: "jader.jader55@gmail.com" } },
+                                avatarUrl: ""
                             }
                         }
                     }
                 }
             },
         })
-        
+
     } catch (error) {
         throw error
     }
