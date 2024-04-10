@@ -8,6 +8,7 @@ import { credentials } from "./routes/credentials"
 import { sender } from "./routes/sender"
 import { config } from "../config"
 import { channels } from "./routes/channels"
+import { utils } from "./routes/utils"
 
 
 const app = Fastify({ logger: false })
@@ -18,9 +19,13 @@ app.register(cors, { origin: "*" })
 app.register(credentials)
 app.register(sender, { prefix: "/debug" })
 app.register(channels, { prefix: "/channels" })
+app.register(utils, { prefix: "/utils" })
 
 app.ready(() => {
     socketEvents(app.io)
+    // instrument(app.io, {
+    //     auth: false,
+    // })
 })
 
 app.listen({ port: config.port }).then(() => { console.log(`🔥 Running server in ${config.port}`) })

@@ -4,7 +4,7 @@ import userController from "../controllers/user-controller"
 import { Server } from "socket.io"
 import { ZodError, z } from "zod"
 import { prisma } from "../database/client"
-import { compare } from "bcryptjs"
+import { compare, hash } from "bcryptjs"
 import { sign } from 'jsonwebtoken'
 import { config } from "../../config"
 import { verifyToken } from "../middleware/auth"
@@ -14,10 +14,18 @@ export const credentials = async (server: FastifyInstance, io: Server) => {
 
     server.get(`/users`, async (req, res) => {
 
-        // const connectedClients = Object.keys(io.sockets.sockets).map((socketId) => socketId)
+        const users = userController.getUsers()
+        res.send({ data: users })
+    })
 
-        // return res.send(connectedClients)
+    server.post<{ Body: { email: string, name: string, username: string, password: string, avatarUrl?: string } }>(`/user`, async (req, res) => {
 
+        const { password, ...rest } = req.body
+        const hash_ = await hash(password, 10)
+        const user = await prisma.user.create({ data: { ...rest, password: hash_ } })
+        const token = sign({ cuid: user.cuid, username: user.username }, config.secretToken, { expiresIn: "7d" })
+
+        res.status(201).send({ msg: "Usuário criado com sucesso", user, token })
     })
 
 

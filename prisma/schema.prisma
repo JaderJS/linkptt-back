@@ -20,17 +20,19 @@ enum TypeUser {
 
 model User {
   cuid      String           @id @default(cuid())
-  role      TypeUser
+  role      TypeUser         @default(user)
   name      String           @db.VarChar(255)
   username  String           @unique @db.VarChar(255)
   email     String           @unique @db.VarChar(255)
   password  String
+  avatarUrl String           @default("")
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   channels  UsersToChannel[]
 
-  channelUpdateBy Channels[] @relation("updatedByUser")
-  channelOwner    Channels[] @relation("owner")
+  channelUpdateBy Channels[]             @relation("updatedByUser")
+  channelOwner    Channels[]             @relation("owner")
+  channelHistorys HistoryTalkToChannel[]
 
   @@map("users")
 }
@@ -41,30 +43,47 @@ enum TypeUserChannel {
 }
 
 model UsersToChannel {
-  id        Int             @id @default(autoincrement())
-  type      TypeUserChannel @default(user)
-  userCuid  String
-  channelId Int
+  id          Int             @id @default(autoincrement())
+  type        TypeUserChannel @default(user)
+  enable      Boolean         @default(true)
+  isFavorite  Boolean         @default(false)
+  userCuid    String
+  channelCuid String
 
-  channel Channels @relation(fields: [channelId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  channel Channels @relation(fields: [channelCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
   user    User     @relation(fields: [userCuid], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
 
-  @@index([userCuid, channelId])
+  @@index([userCuid, channelCuid])
   @@map("users_to_channel")
 }
 
+model HistoryTalkToChannel {
+  id          BigInt   @id @default(autoincrement())
+  channelCuid String
+  blobUrl     String
+  text        String
+  createdAt   DateTime @default(now())
+  createdBy   String
+
+  user    User     @relation(fields: [createdBy], references: [cuid], onDelete: Cascade, onUpdate: Cascade)
+  channel Channels @relation(fields: [channelCuid], references: [cuid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("historys_talk_to_channel")
+}
+
 model Channels {
-  id        Int              @id @default(autoincrement())
+  cuid      String           @id @unique @default(cuid())
   name      String           @unique @db.VarChar(255)
-  isPuclib  Boolean          @default(true)
+  isPublic  Boolean          @default(true)
   avatarUrl String
   password  String
   updatedBy String
   createdBy String
   users     UsersToChannel[]
 
-  owner   User @relation("owner", fields: [createdBy], references: [cuid])
-  updated User @relation("updatedByUser", fields: [updatedBy], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  owner   User                   @relation("owner", fields: [createdBy], references: [cuid])
+  updated User                   @relation("updatedByUser", fields: [updatedBy], references: [cuid], onUpdate: Cascade, onDelete: Cascade)
+  talks   HistoryTalkToChannel[]
 
   @@map("channels")
 }

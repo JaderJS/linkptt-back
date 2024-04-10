@@ -16,11 +16,11 @@ const main = async () => {
                     create: {
                         channel: {
                             create: {
-                                name: "Debug",
+                                name: "LinkNetwork",
                                 password,
                                 owner: { connect: { email: "jader.jader55@gmail.com" } },
                                 updated: { connect: { email: "jader.jader55@gmail.com" } },
-                                avatarUrl: ""
+                                avatarUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzsxYKw_k6OlryRm9sRxEpzQQnl4ylJN8fn1QYCYYLTw&s"
                             }
                         }
                     }

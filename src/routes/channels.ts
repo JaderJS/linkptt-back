@@ -1,10 +1,14 @@
 
-import { FastifyInstance } from "fastify"
+import { FastifyInstance, FastifyRequest } from "fastify"
 import { prisma } from "../database/client"
 import { ZodError, z } from "zod"
 import { hash } from "bcryptjs"
 import { verifyToken } from "../middleware/auth"
 
+
+type ParamsType = {
+    id: string
+}
 
 export const channels = async (server: FastifyInstance) => {
 
@@ -23,9 +27,9 @@ export const channels = async (server: FastifyInstance) => {
                     include: {
                         channel: {
                             select: {
-                                id: true,
+                                cuid: true,
                                 name: true,
-                                isPuclib: true,
+                                isPublic: true,
                             }
                         }
                     }
@@ -34,6 +38,13 @@ export const channels = async (server: FastifyInstance) => {
         })
 
         return res.send({ channels: channelsToUser.channels.map((channel) => channel.channel) })
+    })
+
+    server.get<{ Params: { cuid: string } }>(`/:cuid`, { preHandler: verifyToken }, async (req, res) => {
+        const { users, ...channel } = await prisma.channels.findUniqueOrThrow({ where: { cuid: req.params.cuid }, include: { users: { include: { user: { select: { cuid: true, username: true, avatarUrl: true } } } } } })
+
+        res.send({ msg: "Ok", channel: channel, users: users.map((user) => user.user) })
+
     })
 
     server.post(`/`, async (req, res) => {
@@ -49,11 +60,11 @@ export const channels = async (server: FastifyInstance) => {
         try {
             const { password, ...rest } = schema.parse(req.body)
 
-            const data = await prisma.channels.create({ data: { ...rest, password: await hash(password, 10) } })
+            const data = await prisma.channels.create({ data: { ...rest, password: await hash(password, 10), users: { create: { userCuid: rest.createdBy } } } })
 
             return res.status(201).send({ msg: "User created", data })
 
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof ZodError) {
                 return res.status(400).send({ msg: 'Erro de validação', errors: error.errors })
             }
@@ -62,14 +73,16 @@ export const channels = async (server: FastifyInstance) => {
 
     })
 
+
+
     server.delete(`/`, async (req, res) => {
         const schema = z.object({
-            id: z.number(),
+            cuid: z.string(),
         })
 
         try {
-            const { id } = schema.parse(req.body)
-            await prisma.channels.delete({ where: { id: id } })
+            const { cuid } = schema.parse(req.body)
+            await prisma.channels.delete({ where: { cuid } })
             return res.status(200).send({ msg: "User deleted" })
 
         } catch (error) {
