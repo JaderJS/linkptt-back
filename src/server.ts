@@ -29,10 +29,10 @@ app.ready(() => {
 })
 
 app.get(`/`, async (req, res) => {
-    res.send({ msg: "Server is running" })
+    res.send("Server is running")
 })
 
-app.listen({ port: config.port }).then(() => { console.log(`🔥 Running server in ${config.port}`) })
+app.listen({ port: config.port, host: "0.0.0.0" }).then(() => { console.log(`🔥 Running server in ${config.port}`) })
 
 app.addHook('preHandler', (request, response, done) => {
 
